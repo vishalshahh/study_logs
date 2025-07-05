@@ -32,62 +32,72 @@
     - For any other route not defined in the server return 404
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-  const express = require('express');
-  const bodyParser = require('body-parser');
-  
-  const app = express();
-  
-  app.use(bodyParser.json());
-  
-  let todos = [];
-  
-  app.get('/todos', (req, res) => {
-    res.json(todos);
-  });
-  
-  app.get('/todos/:id', (req, res) => {
-    const todo = todos.find(t => t.id === parseInt(req.params.id));
-    if (!todo) {
-      res.status(404).send();
-    } else {
-      res.json(todo);
-    }
-  });
-  
-  app.post('/todos', (req, res) => {
-    const newTodo = {
-      id: Math.floor(Math.random() * 1000000), // unique random id
-      title: req.body.title,
-      description: req.body.description
-    };
-    todos.push(newTodo);
-    res.status(201).json(newTodo);
-  });
-  
-  app.put('/todos/:id', (req, res) => {
-    const todoIndex = todos.findIndex(t => t.id === parseInt(req.params.id));
-    if (todoIndex === -1) {
-      res.status(404).send();
-    } else {
-      todos[todoIndex].title = req.body.title;
-      todos[todoIndex].description = req.body.description;
-      res.json(todos[todoIndex]);
-    }
-  });
-  
-  app.delete('/todos/:id', (req, res) => {
-    const todoIndex = todos.findIndex(t => t.id === parseInt(req.params.id));
-    if (todoIndex === -1) {
-      res.status(404).send();
-    } else {
-      todos.splice(todoIndex, 1);
-      res.status(200).send();
-    }
-  });
-  
-  // for all other routes, return 404
-  app.use((req, res, next) => {
+
+
+
+const express = require('express');
+const bodyParser = require('body-parser');
+
+const app = express();
+app.use(bodyParser.json());
+
+let todos = [];
+
+// GET /todos - Retrieve all todo items
+app.get('/todos', (req, res) => {
+  res.status(200).json(todos);
+});
+
+// GET /todos/:id - Retrieve a specific todo by ID
+app.get('/todos/:id', (req, res) => {
+  const todo = todos.find(t => t.id === parseInt(req.params.id));
+  if (!todo) {
     res.status(404).send();
-  });
-  
-  module.exports = app;
+  } else {
+    res.status(200).json(todo);
+  }
+});
+
+// POST /todos - Create a new todo item
+app.post('/todos', (req, res) => {
+  const newTodo = {
+    id: Math.floor(Math.random() * 1000000),
+    title: req.body.title,
+    description: req.body.description,
+    completed: req.body.completed ?? false
+  };
+  todos.push(newTodo);
+  res.status(201).json({ id: newTodo.id });
+});
+
+// PUT /todos/:id - Update an existing todo by ID
+app.put('/todos/:id', (req, res) => {
+  const todoIndex = todos.findIndex(t => t.id === parseInt(req.params.id));
+  if (todoIndex === -1) {
+    res.status(404).send();
+  } else {
+    const todo = todos[todoIndex];
+    todo.title = req.body.title ?? todo.title;
+    todo.description = req.body.description ?? todo.description;
+    todo.completed = req.body.completed ?? todo.completed;
+    res.status(200).json(todo);
+  }
+});
+
+// DELETE /todos/:id - Delete a todo by ID
+app.delete('/todos/:id', (req, res) => {
+  const todoIndex = todos.findIndex(t => t.id === parseInt(req.params.id));
+  if (todoIndex === -1) {
+    res.status(404).send();
+  } else {
+    todos.splice(todoIndex, 1);
+    res.status(200).send();
+  }
+});
+
+// Catch-all for undefined routes
+app.use((req, res) => {
+  res.status(404).send();
+});
+
+module.exports = app;

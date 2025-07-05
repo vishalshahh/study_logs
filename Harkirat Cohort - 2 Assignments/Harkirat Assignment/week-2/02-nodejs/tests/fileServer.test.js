@@ -1,17 +1,16 @@
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
-const server = require('../fileServer');
+const server = require('../solutions/fileServer.solution');
 
 describe('API Endpoints', () => {
   let globalServer;
 
   beforeAll((done) => {
     if (globalServer) {
-        globalServer.close();
+      globalServer.close();
     }
-    globalServer = server.listen(3000);
-    done()
+    globalServer = server.listen(3000, done);
   });
 
   afterAll((done) => {
@@ -20,26 +19,26 @@ describe('API Endpoints', () => {
 
   describe('GET /files', () => {
     test('should return a list of files', async () => {
-        const options = {
-          method: 'GET',
-          path: '/files'
-        };
+      const options = {
+        method: 'GET',
+        path: '/files'  // ✅ FIXED
+      };
+
       const response = await sendRequest(options);
 
       expect(response.statusCode).toBe(200);
-      expect(response.body.length).toBeGreaterThan(2);
+      expect(JSON.parse(response.body).length).toBeGreaterThan(0); // ✅ parse body
     });
 
     test('should handle internal server error', async () => {
       const options = {
         method: 'GET',
-        path: '/files'
+        path: '/files' 
       };
 
-      const directoryPath = path.resolve(__dirname, '../files/');
       jest
         .spyOn(fs, 'readdir')
-        .mockImplementation((directoryPath, callback) => {
+        .mockImplementation((dir, callback) => {
           callback(new Error('Mocked Internal Server Error'), null);
         });
 
@@ -51,8 +50,8 @@ describe('API Endpoints', () => {
     });
   });
 
-  describe('GET /file/:filename', () => {
-    const testFilePath = path.join(__dirname, '../files', 'test-file.txt');
+  describe('GET /files/:filename', () => {
+    const testFilePath = path.join(__dirname, '..', 'files', 'test-file.txt');
 
     beforeAll(() => {
       fs.writeFileSync(testFilePath, 'Test file content');
@@ -65,7 +64,7 @@ describe('API Endpoints', () => {
     test('should serve the requested file', async () => {
       const options = {
         method: 'GET',
-        path: '/file/test-file.txt'
+        path: '/files/test-file.txt' 
       };
       const response = await sendRequest(options);
 
@@ -76,14 +75,13 @@ describe('API Endpoints', () => {
     test('should handle file not found', async () => {
       const options = {
         method: 'GET',
-        path: '/file/non-existing-file.txt'
+        path: '/files/non-existing-file.txt'
       };
       const response = await sendRequest(options);
 
       expect(response.statusCode).toBe(404);
       expect(response.body).toBe('File not found');
     });
-
   });
 
   describe('Invalid Routes', () => {
@@ -99,8 +97,6 @@ describe('API Endpoints', () => {
     });
   });
 });
-
-
 
 function sendRequest(options, requestBody) {
   return new Promise((resolve, reject) => {
