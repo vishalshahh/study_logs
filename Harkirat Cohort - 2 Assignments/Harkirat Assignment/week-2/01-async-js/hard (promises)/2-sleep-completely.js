@@ -5,6 +5,17 @@
  */
 
 function sleep(milliseconds) {
+    return new Promise((resolve) => {
+        const start = Date.now()
+        while(Date.now() - start < milliseconds){
+            // Busy wait
+        }
+        resolve()
+    })
 }
+
+sleep(3000).then(() => {
+    console.log("3 seconds later");
+  });
 
 module.exports = sleep;
